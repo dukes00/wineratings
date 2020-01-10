@@ -1,0 +1,103 @@
+---
+title: "Wine Ratings"
+output: html_notebook
+editor_options:
+  chunk_output_type: console
+---
+
+
+```{r setup}
+library(tidyverse)
+library(hrbrthemes)
+
+options(readr.num_columns = 0) # Ignore readr messages
+"%ni%" <- Negate("%in%") # State a "not in" operator
+options(scipen=999)
+
+```
+
+
+```{r readin} 
+
+wine_ratings <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-05-28/winemag-data-130k-v2.csv")
+
+
+```
+
+```{r}
+wine_ratings <- wine_ratings %>%
+  select(-c(X1, taster_twitter_handle, taster_name)) %>%
+  extract(title, "year", "(20\\d\\d)", remove = F, convert = T)
+
+wine_ratings
+```
+
+```{r}
+wine_ratings %>%
+  ggplot(aes(price)) +
+  geom_histogram() +
+  scale_x_log10() +
+  labs(title = "Wine price distribution") +
+  theme_ipsum()
+```
+
+```{r}
+wine_ratings %>%
+  ggplot(aes(points)) +
+  geom_histogram(binwidth = 1) +
+  labs(title = "Wine score distribution") +
+  theme_ipsum()
+```
+
+```{r}
+wine_ratings %>% 
+  filter(!is.na(country)) %>%
+  count(country, sort = T) %>%
+  mutate(country = fct_reorder(country, n)) %>%
+  ggplot(aes(country, n)) +
+  geom_point() +
+  geom_bar(stat = "identity", width = 0.1) +
+  scale_y_log10() + 
+  coord_flip() +
+  theme_ipsum() +
+  labs(title = "Number of wines by country of origin")
+```
+
+```{r}
+wine_ratings %>%
+  filter(!is.na(price) | !is.na(points)) %>%
+  ggplot(aes(price, points)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  scale_x_log10() +
+  labs(title = "Correlation between price and point score of wines") +
+  theme_ipsum()
+
+
+```
+
+```{r}
+wine_ratings %>%
+  filter(!is.na(year) | !is.na(price) | !is.na(points)) %>%
+  ggplot(aes(factor(year), points)) +
+  geom_boxplot()
+
+```
+
+```{r}
+wine_ratings %>%
+  group_by(variety) %>%
+  summarize(n = n(), median_price = median(price, na.rm = T), avg_score = mean(points, na.rm = T)) %>%
+  arrange(-n) %>%
+  filter(n >= 100) %>%
+  mutate(variety = fct_reorder(variety, avg_score)) %>%
+  ggplot(aes(variety, avg_score)) +
+  geom_point() +
+  coord_flip()
+
+```
+
+
+
+
+
